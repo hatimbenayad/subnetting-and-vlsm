@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subnet Calculator with VLSM Support</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.secondary {
+            background-color: #95a5a6;
+        }
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+        button.danger {
+            background-color: #e74c3c;
+        }
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+        .results {
+            margin-top: 20px;
+            background-color: #f5f5f5;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        .vlsm-requirements {
+            margin-bottom: 20px;
+        }
+        .requirement-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .requirement-row input {
+            flex: 1;
+        }
+        .subnet-box {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .warning {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .subnet-heading {
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .info-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            font-weight: 600;
+            width: 150px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .requirement-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .info-row {
+                flex-direction: column;
+                gap: 2px;
+            }
+            .info-label {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Subnet Calculator with VLSM Support</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('regular')">Regular Subnetting</div>
+            <div class="tab" onclick="switchTab('vlsm')">VLSM Subnetting</div>
+        </div>
+        
+        <div class="tab-content active" id="regular-tab">
+            <h2>Regular Subnetting</h2>
+            <p>Calculate all possible subnets for a given network address and subnet mask.</p>
+            
+            <div class="form-group">
+                <label for="regular-ip">IP Address:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="octet1" min="0" max="255" placeholder="192" required>
+                    <input type="number" id="octet2" min="0" max="255" placeholder="168" required>
+                    <input type="number" id="octet3" min="0" max="255" placeholder="1" required>
+                    <input type="number" id="octet4" min="0" max="255" placeholder="0" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="regular-cidr">Subnet Mask (CIDR):</label>
+                <input type="number" id="regular-cidr" min="0" max="32" placeholder="24" required>
+            </div>
+            
+            <button onclick="calculateRegularSubnets()">Calculate Subnets</button>
+            
+            <div id="regular-results" class="results hidden">
+                <h3>Subnet Results</h3>
+                <div id="subnet-count"></div>
+                <div id="subnet-list"></div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="vlsm-tab">
+            <h2>Variable Length Subnet Masking (VLSM)</h2>
+            <p>Create different subnet sizes based on specific host requirements.</p>
+            
+            <div class="form-group">
+                <label for="vlsm-ip">Base Network IP Address:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="vlsm-octet1" min="0" max="255" placeholder="192" required>
+                    <input type="number" id="vlsm-octet2" min="0" max="255" placeholder="168" required>
+                    <input type="number" id="vlsm-octet3" min="0" max="255" placeholder="1" required>
+                    <input type="number" id="vlsm-octet4" min="0" max="255" placeholder="0" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="vlsm-cidr">Base Subnet Mask (CIDR):</label>
+                <input type="number" id="vlsm-cidr" min="0" max="32" placeholder="24" required>
+            </div>
+            
+            <h3>Subnet Requirements</h3>
+            <div class="vlsm-requirements" id="vlsm-requirements">
+                <div class="requirement-row">
+                    <input type="text" placeholder="Subnet Name (e.g. Sales)" class="subnet-name" required>
+                    <input type="number" placeholder="Hosts Required" class="hosts-required" min="1" required>
+                    <button class="danger" onclick="removeRequirement(this)">Remove</button>
+                </div>
+            </div>
+            
+            <button class="secondary" onclick="addRequirement()">Add Subnet</button>
+            <button onclick="calculateVLSM()">Calculate VLSM</button>
+            
+            <div id="vlsm-results" class="results hidden">
+                <h3>VLSM Results</h3>
+                <div id="vlsm-subnet-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Subnet Calculator with VLSM Support | Created for educational purposes</p>
+    </footer>
+
+    <script>
+        // Helper functions
+        function ipToBinary(ipAddress) {
+            const octets = ipAddress;
+            let binary = '';
+            
+            for (let octet of octets) {
+                binary += octet.toString(2).padStart(8, '0');
+            }
+            
+            return binary;
+        }
+        
+        function binaryToIp(binary) {
+            const octets = [];
+            
+            for (let i = 0; i < 32; i += 8) {
+                octets.push(parseInt(binary.substring(i, i + 8), 2));
+            }
+            
+            return octets.join('.');
+        }
+        
+        function calculateSubnets(ipAddress, cidr) {
+            // Convert IP to binary
+            const ipBinary = ipToBinary(ipAddress);
+            
+            // Network bits are fixed, host bits can vary
+            const networkBits = ipBinary.substring(0, cidr);
+            
+            // Total number of host bits
+            const totalHostBits = 32 - cidr;
+            
+            // If the subnet mask is too large, there are no subnets to enumerate
+            if (totalHostBits <= 0) {
+                return ["Invalid subnet mask. No host bits available."];
+            }
+            
+            // Calculate number of subnets
+            const numSubnets = Math.pow(2, totalHostBits);
+            // Limit number of displayed subnets for better performance
+            const displayedSubnets = Math.min(numSubnets, 256);
+            
+            const subnets = [];
+            
+            // Create each subnet
+            for (let i = 0; i < displayedSubnets; i++) {
+                // Convert i to binary and pad with zeros
+                const subnetHostBits = i.toString(2).padStart(totalHostBits, '0');
+                
+                // Combined network and host bits for this subnet
+                const subnetBinary = networkBits + subnetHostBits;
+                
+                // Calculate network address
+                const networkAddress = [];
+                for (let j = 0; j < 32; j += 8) {
+                    networkAddress.push(parseInt(subnetBinary.substring(j, j + 8), 2));
+                }
+                
+                // First usable IP: Network address + 1
+                const firstUsable = [...networkAddress];
+                firstUsable[3] += 1;
+                
+                // Last usable IP: Broadcast address - 1
+                const broadcastAddress = [...networkAddress];
+                broadcastAddress[3] = networkAddress[3] + Math.pow(2, totalHostBits) - 1;
+                
+                const lastUsable = [...broadcastAddress];
+                lastUsable[3] -= 1;
+                
+                // Format subnet information
+                const subnetInfo = {
+                    network: networkAddress.join('.'),
+                    firstUsable: firstUsable.join('.'),
+                    lastUsable: lastUsable.join('.'),
+                    broadcast: broadcastAddress.join('.'),
+                    cidr: cidr,
+                    hosts: Math.pow(2, totalHostBits) - 2
+                };
+                
+                subnets.push(subnetInfo);
+            }
+            
+            return subnets;
+        }
+        
+        function calculateVLSMSubnets(baseNetwork, baseCidr, requirements) {
+            // Sort requirements by number of hosts (largest first)
+            const sortedRequirements = [...requirements].sort((a, b) => b.hosts - a.hosts);
+            
+            // Convert base network to binary
+            const baseNetworkBinary = ipToBinary(baseNetwork);
+            
+            // Initialize current network binary
+            let currentNetworkBinary = baseNetworkBinary.substring(0, baseCidr) + '0'.repeat(32 - baseCidr);
+            
+            const vlsmSubnets = [];
+            
+            for (const req of sortedRequirements) {
+                const subnetName = req.name;
+                const hostsNeeded = req.hosts;
+                
+                // Calculate required subnet mask
+                let hostBits = 0;
+                while (Math.pow(2, hostBits) - 2 < hostsNeeded) {
+                    hostBits++;
+                }
+                
+                const cidr = 32 - hostBits;
+                const networkBits = currentNetworkBinary.substring(0, cidr);
+                
+                // Create subnet binary
+                const subnetBinary = networkBits + '0'.repeat(32 - cidr);
+                
+                // Calculate network address
+                const networkAddress = [];
+                for (let j = 0; j < 32; j += 8) {
+                    networkAddress.push(parseInt(subnetBinary.substring(j, j + 8), 2));
+                }
+                
+                // First usable IP: Network address + 1
+                const firstUsable = [...networkAddress];
+                if (hostBits > 0) {
+                    firstUsable[3] += 1;
+                }
+                
+                // Calculate broadcast address
+                const broadcastAddress = [...networkAddress];
+                let addition = Math.pow(2, hostBits) - 1;
+                broadcastAddress[3] += addition;
+                
+                // Handle overflow
+                for (let i = 3; i > 0; i--) {
+                    if (broadcastAddress[i] > 255) {
+                        broadcastAddress[i-1] += Math.floor(broadcastAddress[i] / 256);
+                        broadcastAddress[i] = broadcastAddress[i] % 256;
+                    }
+                }
+                
+                // Last usable IP: Broadcast address - 1
+                const lastUsable = [...broadcastAddress];
+                if (hostBits > 0) {
+                    lastUsable[3] -= 1;
+                }
+                
+                // Format subnet information
+                const subnetInfo = {
+                    name: subnetName,
+                    network: networkAddress.join('.'),
+                    firstUsable: firstUsable.join('.'),
+                    lastUsable: lastUsable.join('.'),
+                    broadcast: broadcastAddress.join('.'),
+                    cidr: cidr,
+                    hostsNeeded: hostsNeeded,
+                    hostsAvailable: Math.pow(2, hostBits) - 2
+                };
+                
+                vlsmSubnets.push(subnetInfo);
+                
+                // Move to the next network address for the next subnet
+                const nextNetwork = [...broadcastAddress];
+                nextNetwork[3] += 1;
+                
+                // Handle carry over
+                for (let i = 3; i > 0; i--) {
+                    if (nextNetwork[i] > 255) {
+                        nextNetwork[i-1] += Math.floor(nextNetwork[i] / 256);
+                        nextNetwork[i] = nextNetwork[i] % 256;
+                    }
+                }
+                
+                // Convert to binary for the next iteration
+                currentNetworkBinary = ipToBinary(nextNetwork);
+            }
+            
+            return vlsmSubnets;
+        }
+        
+        // UI Functions
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Deactivate all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Activate selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Activate selected tab button
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        }
+        
+        function validateOctets(octets) {
+            for (let octet of octets) {
+                if (isNaN(octet) || octet < 0 || octet > 255) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function validateCIDR(cidr) {
+            return !isNaN(cidr) && cidr >= 0 && cidr <= 32;
+        }
+        
+        function calculateRegularSubnets() {
+            // Get the octets and CIDR
+            const octets = [
+                parseInt(document.getElementById('octet1').value),
+                parseInt(document.getElementById('octet2').value),
+                parseInt(document.getElementById('octet3').value),
+                parseInt(document.getElementById('octet4').value)
+            ];
+            
+            const cidr = parseInt(document.getElementById('regular-cidr').value);
+            
+            // Validate inputs
+            if (!validateOctets(octets)) {
+                alert('Please enter valid IP octets (0-255)');
+                return;
+            }
+            
+            if (!validateCIDR(cidr)) {
+                alert('Please enter a valid CIDR (0-32)');
+                return;
+            }
+            
+            // Calculate subnets
+            const subnets = calculateSubnets(octets, cidr);
+            
+            if (typeof subnets[0] === 'string') {
+                // Display error message
+                document.getElementById('subnet-count').innerHTML = subnets[0];
+                document.getElementById('subnet-list').innerHTML = '';
+            } else {
+                // Display number of subnets
+                document.getElementById('subnet-count').innerHTML = `<p>Found ${subnets.length} subnets ${subnets.length >= 256 ? '(showing first 256)' : ''}</p>`;
+                
+                // Create subnet list
+                let subnetHTML = '';
+                const maxDisplayed = Math.min(subnets.length, 32);
+                
+                for (let i = 0; i < maxDisplayed; i++) {
+                    const subnet = subnets[i];
+                    subnetHTML += `
+                        <div class="subnet-box">
+                            <div class="subnet-heading">Subnet ${i+1}</div>
+                            <div class="info-row">
+                                <span class="info-label">Network Address:</span>
+                                <span>${subnet.network}/${subnet.cidr}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">First Usable IP:</span>
+                                <span>${subnet.firstUsable}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Last Usable IP:</span>
+                                <span>${subnet.lastUsable}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Broadcast Address:</span>
+                                <span>${subnet.broadcast}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Total Hosts:</span>
+                                <span>${subnet.hosts}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('subnet-list').innerHTML = subnetHTML;
+            }
+            
+            document.getElementById('regular-results').classList.remove('hidden');
+        }
+        
+        function addRequirement() {
+            const requirementsContainer = document.getElementById('vlsm-requirements');
+            const newRequirement = document.createElement('div');
+            newRequirement.className = 'requirement-row';
+            newRequirement.innerHTML = `
+                <input type="text" placeholder="Subnet Name (e.g. Sales)" class="subnet-name" required>
+                <input type="number" placeholder="Hosts Required" class="hosts-required" min="1" required>
+                <button class="danger" onclick="removeRequirement(this)">Remove</button>
+            `;
+            requirementsContainer.appendChild(newRequirement);
+        }
+        
+        function removeRequirement(button) {
+            const row = button.parentNode;
+            row.parentNode.removeChild(row);
+        }
+        
+        function calculateVLSM() {
+            // Get the base network octets and CIDR
+            const baseNetwork = [
+                parseInt(document.getElementById('vlsm-octet1').value),
+                parseInt(document.getElementById('vlsm-octet2').value),
+                parseInt(document.getElementById('vlsm-octet3').value),
+                parseInt(document.getElementById('vlsm-octet4').value)
+            ];
+            
+            const baseCidr = parseInt(document.getElementById('vlsm-cidr').value);
+            
+            // Validate inputs
+            if (!validateOctets(baseNetwork)) {
+                alert('Please enter valid IP octets (0-255)');
+                return;
+            }
+            
+            if (!validateCIDR(baseCidr)) {
+                alert('Please enter a valid CIDR (0-32)');
+                return;
+            }
+            
+            // Collect subnet requirements
+            const requirements = [];
+            const requirementRows = document.querySelectorAll('#vlsm-requirements .requirement-row');
+            
+            for (const row of requirementRows) {
+                const name = row.querySelector('.subnet-name').value.trim();
+                const hosts = parseInt(row.querySelector('.hosts-required').value);
+                
+                if (name === '' || isNaN(hosts) || hosts < 1) {
+                    alert('Please fill out all subnet requirements correctly');
+                    return;
+                }
+                
+                requirements.push({
+                    name: name,
+                    hosts: hosts
+                });
+            }
+            
+            if (requirements.length === 0) {
+                alert('Please add at least one subnet requirement');
+                return;
+            }
+            
+            // Calculate VLSM subnets
+            const vlsmSubnets = calculateVLSMSubnets(baseNetwork, baseCidr, requirements);
+            
+            // Create subnet list
+            let subnetHTML = '';
+            
+            for (let i = 0; i < vlsmSubnets.length; i++) {
+                const subnet = vlsmSubnets[i];
+                const hasWarning = subnet.hostsAvailable < subnet.hostsNeeded;
+                
+                subnetHTML += `
+                    <div class="subnet-box">
+                        <div class="subnet-heading">Subnet ${i+1}: ${subnet.name}</div>
+                        <div class="info-row">
+                            <span class="info-label">Network Address:</span>
+                            <span>${subnet.network}/${subnet.cidr}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">First Usable IP:</span>
+                            <span>${subnet.firstUsable}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Last Usable IP:</span>
+                            <span>${subnet.lastUsable}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Broadcast Address:</span>
+                            <span>${subnet.broadcast}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Hosts Needed:</span>
+                            <span>${subnet.hostsNeeded}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Hosts Available:</span>
+                            <span>${subnet.hostsAvailable}</span>
+                        </div>
+                        ${hasWarning ? '<div class="warning">WARNING: Not enough hosts available for this subnet\'s requirements!</div>' : ''}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('vlsm-subnet-list').innerHTML = subnetHTML;
+            document.getElementById('vlsm-results').classList.remove('hidden');
+        }
+        
+        // Initialize with default values
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add a default subnet requirement row
+            addRequirement();
+        });
+    </script>
+</body>
+</html>
