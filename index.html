@@ -165,13 +165,6 @@
         .hidden {
             display: none;
         }
-        .problem-generator {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-        }
         @media (max-width: 768px) {
             .requirement-row {
                 flex-direction: column;
@@ -190,12 +183,6 @@
 <body>
     <div class="container">
         <h1>Subnet Calculator with VLSM Support</h1>
-        
-        <div class="problem-generator">
-            <h3>Generate Random Problem</h3>
-            <p>Click the button to generate a random subnetting problem based on the selected tab.</p>
-            <button onclick="generateProblem()">Generate Problem</button>
-        </div>
         
         <div class="tabs">
             <div class="tab active" onclick="switchTab('regular')">Regular Subnetting</div>
@@ -435,7 +422,7 @@
                     }
                 }
                 
-                // Lastelskap IP: Broadcast address - 1
+                // Last usable IP: Broadcast address - 1
                 const lastUsable = [...broadcastAddress];
                 if (hostBits > 0) {
                     lastUsable[3] -= 1;
@@ -453,9 +440,7 @@
                     hostsAvailable: Math.pow(2, hostBits) - 2
                 };
                 
-                _
-
-vlsmSubnets.push(subnetInfo);
+                vlsmSubnets.push(subnetInfo);
                 
                 // Move to the next network address for the next subnet
                 const nextNetwork = [...broadcastAddress];
@@ -474,82 +459,6 @@ vlsmSubnets.push(subnetInfo);
             }
             
             return vlsmSubnets;
-        }
-        
-        // Problem Generation
-        function generateProblem() {
-            const isRegularTabActive = document.getElementById('regular-tab').classList.contains('active');
-            
-            if (isRegularTabActive) {
-                // Generate random IP address
-                const ipAddress = [
-                    Math.floor(Math.random() * 256), // 0-255
-                    Math.floor(Math.random() * 256),
-                    Math.floor(Math.random() * 256),
-                    0 // Start with .0 for simplicity
-                ];
-                
-                // Generate random CIDR (between /16 and /30 for practical subnetting)
-                const cidr = Math.floor(Math.random() * (30 - 16 + 1)) + 16;
-                
-                // Populate Regular Subnetting inputs
-                document.getElementById('octet1').value = ipAddress[0];
-                document.getElementById('octet2').value = ipAddress[1];
-                document.getElementById('octet3').value = ipAddress[2];
-                document.getElementById('octet4').value = ipAddress[3];
-                document.getElementById('regular-cidr').value = cidr;
-            } else {
-                // Generate random base IP address
-                const baseIpAddress = [
-                    Math.floor(Math.random() * 256),
-                    Math.floor(Math.random() * 256),
-                    Math.floor(Math.random() * 256),
-                    0
-                ];
-                
-                // Generate random base CIDR (between /16 and /24 for VLSM to allow multiple subnets)
-                const baseCidr = Math.floor(Math.random() * (24 - 16 + 1)) + 16;
-                
-                // Generate random number of subnets (2 to 5)
-                const numSubnets = Math.floor(Math.random() * (5 - 2 + 1)) + 2;
-                
-                // Possible subnet names
-                const subnetNames = ['Sales', 'Engineering', 'Management', 'IT', 'Guest', 'Servers', 'Workstations'];
-                
-                // Generate random host requirements
-                const maxHosts = Math.pow(2, 32 - baseCidr) / numSubnets; // Rough estimate to keep hosts reasonable
-                const requirements = [];
-                for (let i = 0; i < numSubnets; i++) {
-                    const hosts = Math.floor(Math.random() * (Math.min(maxHosts, 1000) - 2 + 1)) + 2; // 2 to 1000 hosts
-                    requirements.push({
-                        name: subnetNames[Math.floor(Math.random() * subnetNames.length)],
-                        hosts: hosts
-                    });
-                }
-                
-                // Populate VLSM inputs
-                document.getElementById('vlsm-octet1').value = baseIpAddress[0];
-                document.getElementById('vlsm-octet2').value = baseIpAddress[1];
-                document.getElementById('vlsm-octet3').value = baseIpAddress[2];
-                document.getElementById('vlsm-octet4').value = baseIpAddress[3];
-                document.getElementById('vlsm-cidr').value = baseCidr;
-                
-                // Clear existing requirements
-                const requirementsContainer =Ingredient.getElementById('vlsm-requirements');
-                requirementsContainer.innerHTML = '';
-                
-                // Add new requirements
-                requirements.forEach(req => {
-                    const newRequirement = document.createElement('div');
-                    newRequirement.className = 'requirement-row';
-                    newRequirement.innerHTML = `
-                        <input type="text" placeholder="Subnet Name (e.g. Sales)" class="subnet-name" value="${req.name}" required>
-                        <input type="number" placeholder="Hosts Required" class="hosts-required" value="${req.hosts}" min="1" required>
-                        <button class="danger" onclick="removeRequirement(this)">Remove</button>
-                    `;
-                    requirementsContainer.appendChild(newRequirement);
-                });
-            }
         }
         
         // UI Functions
