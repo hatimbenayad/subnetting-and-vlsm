@@ -304,6 +304,9 @@
             
             const subnets = [];
             
+            // Calculate block size
+            const blockSize = Math.pow(2, totalHostBits);
+            
             // Create each subnet
             for (let i = 0; i < displayedSubnets; i++) {
                 // Convert i to binary and pad with zeros
@@ -322,12 +325,33 @@
                 const firstUsable = [...networkAddress];
                 firstUsable[3] += 1;
                 
-                // Last usable IP: Broadcast address - 1
+                // Calculate broadcast address by adding block size - 1 to network address
                 const broadcastAddress = [...networkAddress];
-                broadcastAddress[3] = networkAddress[3] + Math.pow(2, totalHostBits) - 1;
+                let temp = blockSize - 1;
+                for (let k = 3; k >= 0; k--) {
+                    broadcastAddress[k] += temp % 256;
+                    temp = Math.floor(temp / 256);
+                    if (broadcastAddress[k] > 255) {
+                        if (k > 0) {
+                            broadcastAddress[k - 1] += Math.floor(broadcastAddress[k] / 256);
+                            broadcastAddress[k] %= 256;
+                        } else {
+                            broadcastAddress[k] %= 256; // Prevent overflow in first octet
+                        }
+                    }
+                }
                 
+                // Last usable IP: Broadcast address - 1
                 const lastUsable = [...broadcastAddress];
                 lastUsable[3] -= 1;
+                if (lastUsable[3] < 0) {
+                    for (let k = 3; k > 0; k--) {
+                        if (lastUsable[k] < 0) {
+                            lastUsable[k - 1] -= 1;
+                            lastUsable[k] += 256;
+                        }
+                    }
+                }
                 
                 // Format subnet information
                 const subnetInfo = {
